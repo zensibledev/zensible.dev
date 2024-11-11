@@ -1,0 +1,228 @@
+#+title: Zensible Development
+#+setupfile: ~/org/theme-readtheorg.setup
+#+options: H:9 ^:{}
+#+auto_tangle: t
+
+/Zensible/ is an amalgamation of /Zen/, /Zig/, /Sensible/ and /Ansible/.
+
+Zig and Ansible are the two main motivations for this project. My desire to do more with Zig and my desire to make Ansible great, but seeing that this is too hard, my plan to make a sensible alternative to Ansible which might be even harder but more fun.
+
+Zen and sensibility are what I want this project's guiding principles to be or to become. Ah yes, this is a nascent project hoping to take off soon.
+
+* About
+
+** The Goal
+The purpose of Zensible is not just to be a better Ansible, but to be what Ansible could have been, if it was done "right". Ansible is a great tool. It grew far beyond of what it was originally conveiced to be. It could grow even further if it would not have several problems which confine it in the scope it has today.
+
+The reason why Zig is in the center of the name and the project is because it's as much Zen as you can get from a programming language. Zig also fits extremely well into the scope that Zensible is occupying and I believe that if Zensible takes off, it's could be a nice driver for Zig.
+
+** History
+History is starting here. Or rather the idea to do something like this started long before today as a collection of frustrations I experienced. But the spark to do something about it and see if my frustrations can be a starting point for a solution lead to this: [[https://ziggit.dev/t/advanced-project-ideas/5511/25?u=mutech][Advanced project ideas - #25 by mutech - Brainstorming - Ziggit]]
+
+** This Site
+This is currently just an Org-mode file that lives on my laptop converted into an HTML page. I plan on using this to collect thoughts and present it to whomever is interested in this project. As soon as this is not only me and we need more interactivity and collaboration, there will be something else replacing this.
+
+** Contacts and Communication
+
+I haven't yet setup mails accounts for the project or any other means of communication or collaboration. Once I did, here is where you find it.
+
+* Roadmap
+
+Zensible is currently just an idea. I have a whole lot of ideas and I want to take a close look at Ansible and why I like working with it. Then I want to put together my ideas and the good parts of Ansible and try to condense this into a kind of technical manifesto. Then I will try to convert that into an action plan with the goal to produce useful results that can grow together into what I want Zensible to be.
+
+While this is going on, I want to replace "I" with "We" and setup a framework for a community with the goal to steer community action into a direction that benefits the project and can transition to a point where I can extract myself. This "community framework" is an integral part of Zensible. It's goal is to make it fun to be part of the community, to allow people to play but also to get some of the guidance and curation that commercial products have and FOSS usually only see if there is this benevolent dictator.
+
+So this is definitely not an agile project, because Ansible is the result of agility. It's great, but as I see it, it's not good enough. It's also not a waterfall project, because that's too hard to get right. My ideal here is to find a balance between these two approaches with the goal to find the zen, or in other words good abstractions that don't need to change all the time or need alternatives to be valid. Good abstractions represent the part of reality that respective software modules support or implement. The better the abstraction, the easier and robust the implementation. Agility is needed because nobody knows enough from the start. Rigidity is needed in order to not deviate from important principles and preserve the benefits of new years resolutions. I don't know how to do this, but I really would like to find a solution for this problem that haunts agile and ridgit processes and the lack of balance between the two.
+
+* Learning from Ansible
+This is work in progress, I just dump out observations in random order to collect the things I stumbled over while using Ansible. Once I run out of reasons to rant, I'm trying to structure the whole thing as a basis for an alternative design.
+
+While there will be a lot of complaints, I understand why Ansible is what it is. And it's a wonderful invention. The guys who created and grew Ansible are geniuses. They put up functionality that is incredibly powerful with the absolute least amount of effort by reusing the tools they found. Many of the concepts are so simple and yet powerful and elegant, that I really don't enjoy ranting as much as I do. I admire that and it's (one of) the reasons why Ansible could have been as successful as it is.
+
+** The Inventory
+The Ansible inventory is a JSON-ish file or the output of a program. The structure is a tree consisting of (possibly nested) group nodes and leaf nodes for hosts.
+
+Each node can define variables. A variable defined at a deeper level overrides definitions (of variables with the same name) from higher levels.
+
+In addition to that, Ansible supports group and host vars from a file system directory where directories are group names and files group or host names.
+
+I certaily missed some additional features of the inventory. But that alone is incredibly powerful and just as easy and intuitive to use. It's much easier to use than it is to understand.
+
+This is one of the best arguments you can present in defense of inheritance and mixins, and you will win the debate (if the opponent ever used it). It just works.
+
+Well until it doesn't. And again, that happens long after you fell in love with the concept.
+
+The most annoying problem is experienced is when you need the inventory outside of the context of "the current" host. This happens when you delegate a task. Depending on what the task does, it may need the view of the delegating host, the delegated host or both. What you get is something. I could be more precise and write what you actually get, if I wanted to spend hours or days to refresh my memory. I remember that I understood that once. I saw other problems, but I forgot what they were because I was so annoyed about this one that I had no room left in my rant department.
+
+This is one example of me complaining about something I enjoy so much that I would much rather praise it.
+
+** Declarations versus Imperatives
+Ansible favors a declarative approach, "describe what you want" and not "how to get it".
+
+For example, you would specify a user having a name, an ID, a home directory and various other attributes, instead of "creating", "updating" or "deleting" a user.
+
+That's great, because you don't want to create a user when they already exist, or update the record when it's up to date. Looking at log files, you want to know what changed and for that you need to know what it was before, what it is after and what it should be.
+
+But then Ansible muddies the waters by calling the thing that should have been a declaration "a task". And that's by far not the only deviation from the principle or accurate naming.
+
+In reality you need both, a goal, the declaration and a way to make that happen. The point is that once somebody has established how a certain kind of goal can be accomplished, it suffices to say "make it so", and "so" is the declaration.
+
+There are of course also situations where what you declare is a process and what you want is that process to happen instead of only the resulting state.
+
+I prefer a more holistic approach covering both processes and results. The most consistent view of specifying that are contracts, as in [[https://en.wikipedia.org/wiki/Design_by_contract][Design by contract]].
+
+In the context of Zensible, there will be "systems". A system is something that has a state and actions that modify the state. This is basically an object, but this has nothing to do with OOD or OOP. It's just an abstraction that is supposed to make it easier to talk about the real world thing we are operating on.
+
+A state can be as simple as void which is the absence of anything that can change, or an arbitrarily complex data structure. I assume that the structure is representable in a JSON document (null, bool, number, string, array, dictionary), because that's the lingua franca in communications with software. That also allows for easy querying of subsets of data.
+
+The state of a system cannot be changed by simply updating values, and it can change by itself (a system clock does that). A system provides actions that may change its state according to their specification (the contract mentioned above).
+
+Now, a tool supporting a declarative approach would accept a desired state and be able to find and execute the actions required to create that state. Translated to DbC lingo, the declared state is the post condition, the current state is the precondition. The job for the automator is to find a sequence of actions that will do that transformation.
+
+A program supporting an imperative approach would have full access to the system it's operating on, query its state as needed and perform the actions necessary to update its state.
+
+The imperative approach is obviously more powerful than the declarative, you can implement the latter by using the former, but not vice versa.
+
+Why would you prefer the declarative approach then? Well, if it works, it's easier and more flexible. Why would you do more work than you have to?
+
+This is a major difference between Ansible and what I want Zensible to be. Ansible draws the line between declarations and code at the level of modules, things that you can use declaratively. Zensible has a notion of a system which can be as specific as it wants to be or as general as Ansible. "Linux" can be a plugin for "Operating System". "/etc/passwd" and "AD" can be plugins for "User Database".
+
+The benefit of this approach is that many "objects" that are subject to what Ansible does very rarely if ever change. So the abstractions modelling these objects are likely to be robust and they can be a very close reflection of what similar systems have in common and how they differ. Using exhaustive contracts also makes it clear and verifiable where a declarative approach faces its limits.
+
+This is also why this is not just a renaissance of OOP, because objects, classes, inheritance and all that is not a paradigm along which software is developed, but a means to describe reality as it is with a relatively simple structure (state, queries and actions). So the goal is not to use inheritance to accomplish something but to recognize something that is already there and to take advantage from the information resulting from that recognition.
+
+The role of an automation tool to "find actions transforming a precondition into a post condition (the state to satisfy either)" is exactly what Ansible does, in a way. It just doesn't do it very well. If asked "what is the precondition of a playbook", I would run it in check mode. Then I could say "It's probably satisfied".
+
+If there is an abstract object "web server" that has been tested and is in use in hundreds of playbooks (another bad name for a declaration) and if I know that the platform is supported (by an implementation of that abstract object), such a question is easy (and in fact rather statically) to answer.
+
+Ansible is actually quite close to this approach, many modules document a contract and manage dependencies (ensure preconditions are met). It's just falling short which removes the benefit of a contract that responsibilities are clear. It also falls short in regard to modules being the only abstraction for actions and they can't use each other (easily). Inter-module dependencies are a night mare and you have to hack them together if you wanted to use them.
+** Templating
+A lot of what Ansible does uses templates. This is a very elegant solution both for classical templating tasks such as the creation of dynamic files such as configurations, as well as to provide some degree of logic interpreting the inventory or when gluing together tasks.
+
+Ansible uses Jinja2 for that purpose. This is a rather powerful templating language and it integrates very well in Yaml syntax. It also makes it very easy for Ansible to connect it to its variable scope.
+
+You can even create plugins and expose them as Jinja filters, something that's more or less a function.
+
+This makes templates one of five distinct elements that can do computations: Playbooks, tasks, plugins, roles and templates. Each of them is a powerful tool in its own right and all tree combined make up a lot of Ansibles charm. They fit so well together, that it takes quite a while until you face problems. These problems are however very hard to solve, because this concept has not been designed to work together, it was just the best tools available at the time when they have been put together.
+
+For my taste, these are definitely too many conflicting abstractions piled on top of each other. Not only in terms of esthetics, but also because these conflicts lead to time consuming hacking sessions.
+
+I don't know if more than a single "language" is needed to create something that works as well as Ansible. A separate templating language is probably needed because of the importance of templating. But I want that to be consistent with other parts of Zensible, because in the end, a template will be turned into a transformation that renders a text based on a state. It's just a query.
+** Roles
+Roles in Ansible are one of the messiest concepts. On the naming level, Ansible roles are not roles at all. The primary actions on a role are assignment and revocation. Ansible calls a role, which is just a bad name for an assignment. Ansible has no notion for revoking a role. And then it gets really bad in that roles can have parameters, but they are not parameters. Roles can read the playbook state. So to "call" a role that requires parameters, you have to set global variables (and hope not to override variables used outside of the role). This is a complete catastrophe.
+
+But roles are the only (usable) tool to reuse task definitions. You want to reuse task definitions, because they are great. You use Ansible, because you can do a lot with these task definitions and it's incredibly easy.
+** Tasks
+** Playbooks
+** Plugins
+Plugins are the extension points of Ansible. This is really cool, or it could be...
+
+There are so many problems with Ansible's plugin mechanism, that I have to spend real work collecting them all. Not now.
+
+A quick list of the most annoying problems I encountered and can remember immediately:
+- Each plugin type has their own way of specifying arguments, result and documentation
+- Plugins are not centered around what they do but where they do it.
+  - There are good reasons to use remote plugins (running on the target) for local jobs, because there are good reasons not to use plugins running locally (at all or in some situations)
+- The task running architecture (remote tasks) is a nightmare.
+  - It makes using Python useless, if you want to benefit from Pythons most important feature: a universe of dependencies to rule everything
+  - It makes it impossible to debug or control tasks running remotely
+  - The debugging tools provided by Ansible to mitigate this are poor at best
+  - I suspect immense security issues from this architecture that have either not yet been exploited or that we don't know about.
+- Writing a good plugin requires an insane amount of boilerplate.
+- You have to carefully consider which Python version you use, adding more boilerplate
+- There are usually 2-3 ways to do things, and it's hard to know what is "the right way"
+- It's hard to find documentation about anything or to find out what you want to know in the documentation you found.
+- There is no reuse of plugins, only reuse of Python. That's in part a consequence of the task running architecture.
+- The opportunity to use something else but Python is fake, because the price to pay for that just doesn't justify the benefits (in most cases)
+- Given the choice to abuse roles (difficulty level noob) or writing a proper plugin (level expert), only people having a good reason to want to publish a plugin would do the right thing. Most just write roles and Jinja macros. (That's a really badbadbad idea)
+
+* Fixing Ansible (Zensible 0.0)
+Everything in this section is raw brain dump and very stormy. Most will probably change or shift.
+** Systems
+Properties:
+- Everything that has a state is a system
+- State is immutable (as in: you can't manually mutate it)
+- Systems expose actions that may change the state
+- Subsets of a systems state can be volatile or deterministic.
+  - Volatile state can change anytime for any reason
+  - Determinstic state only changes as a result of actions being executed
+  - This is a soft definition in the sense that these assertions are true if nothing unexpected happens that should have been prevented by external factors.
+- A systems state can be queried by any query language that operates on a JSON structure (f.e. jq)
+  - Queries do not produce side effects (except resource utilization and things like caches)
+  - A system can define/provide named queries, that are equivalent to custom queries but might be implemented more efficiently.
+- The structure of a system state can be specified with any schema language that can specify JSON structures. Zensible will define a schema language that can also specify the Zig/C representation of a state. Parameters for queries and actions form a system (query/action execution). Where Zig and JSON types do not naturally map to each other, a schema defines the mapping.
+  - Where state is obtained in the form of JSON-like data, alternative representations of a (sub-)state may be defined, but there has to be a unique canonical form.
+  - When serializing state, volatile sub state can be excluded
+** Inventory
+Properties:
+- An Ansible Inventory is or can be converted to a Zensible Inventory
+- Zensible inventories extend the concept of groups (how: to be defined). Examples:
+  - Groups can appear anywhere.
+    - Groups might be used as tags (=host: { groups: [groups-as-tag] }=)
+      - Hosts might be required to appear only once in the inventory
+      - This reduces confusion and makes it possible to define the order of variable overriding
+  - A node type "Site"
+  - A node type "Network" below "Sites"
+  - These and other specialized nodes are used to provide standardized configuration data
+- The inventory is always available, every active part of Zensible operates in the context of an inventory.
+- Nodes in the inventory have a resolved flat inventory state similar to what a task in an Ansible playbook sees in "hostvars".
+- Actions and queries can access the global inventory and for any visible node, the view of that node.
+- A host is a type of system that represents a real host
+  - The inventory node corresponding to that host provides configuration information for that host.
+  - The implementation of the host system provides access to the state and actions for the host (the real thing, not the inventory)
+  - The implementation of the host provides communication channels between Zensible and the host using information from the inventory.
+  - The concept of a host as subject to Ansible automation can be extended to anything that fits the above description. The name "host" is then too specific. Just like "automation". It looks like all that's needed is actually a system.
+- Concept for "variable inheritance": Default is simply override in nested nodes. This makes hierarchical data in variables problematic. Either support merge policies or think of something else, or just do it the Ansible way. Not sure.
+
+** No Playbooks
+Instead of playbooks, Zensible goes all out on declarations. Since I can't think of a good name, I keep using playbooks for now, but a playbook is conceptionally nothing more than a *post condition* that can be requested to become satisfied for some system and according to the settings in the inventory.
+
+If the knowlegebase of Zensible is sufficient to determine what needs to be done to establish such a post condition, then this is it.
+
+Otherwise, Zensible can identify based on pre condition (the state of the target system), inventory and post condition, which actions need to be implemented.
+
+These actions can then be implemented using the actions of systems involved, f.e. all sub systems of the target system.
+
+If there are no actions or implementations for actions for a specific platform, Zensible can identify which implementations are missing and they can then be implemented using Zig or other means (scripts, commands, etc.). Ideally, such implementations will then be published as proposals, reviewed, tested and added to Zensible's solution repository.
+
+I deliberately used this dialog format in the description, because I imagine this dialog to actually happen, at least as an alternative to disconnected editing of yaml files or source code. The purpose of this interactive approach would be to provide more guidance, reduce boilerplate as much as possible and to guarantee that solutions meet quality standards, at least when they are to be published.
+
+That would make Zensible a chatty thing, or that's one way of how one could work with Zensible.
+** No Tasks
+There is no need for tasks when there are systems providing actions. That imposes some extra features from tasks to provide features like a "check mode" (Ansible lingo for dry run).
+
+Actions should also support as much transactionality (ACID properties) as possible to allow roll back for grouped actions, and to provide a safe environment for targets that are online while being worked on. In practice, this will not work, because Zensible would not have exclusive access to targets, unless that is enforced externally, so what can realistically be expected from this concept is more robustness, which I think is worth pursuing.
+
+The overhead that such action implementations would create when implemented in Zig do not damage the usability of such implementations in a context where contracts, dry runs and transactionality is not needed, thanks to comptime optimizations. That means that action implementations would be usable outside the context of Zensible as a normal Zig library functionality.
+
+Exhaustive contracts would allow to deconstruct the object oriented look and feel of systems and keep Zig world free of OOishness. This works both ways, allowing action implementations to access whatever Zig world has to offer.
+
+** Roles?
+Roles are not really required if Zensibooks (?) are a thing. Or maybe the other way around, if a Zensibook (I think I like this) is applied, this is a lot like a role assignment. The question however would be what the semantics of revoking a role would be.
+
+In terms of Design by Contract, it would be the restauration of the pre condition. This looks like my analogy of contracts is not quite enough, because revoking a role should mean that everything that is required only by about to be removed role (and not by other roles assigned to the subject) can be restored to either the state before the role was applied or to a defined default state.
+
+Other then in Ansible, a role assignment has to be part of the inventory, so that it is visible everywhere.
+
+*** Roles and Target Host Packages
+If Roles will be a thing in Zensible, then role assignments could be expressed and in some part implemented using target software packages. This would take care of a whole lot of jobs that Zensible would otherwise have to do itself (That would of course only apply to platforms that support sufficiently powerful package management).
+
+Features:
+- The state of a role assignment would be whether a specific package is installed
+- Dependency management (both native packages and role dependencies) would be done by the package manager. Conflicts would be caught before changes are made (interesting if things beyond zensibles visibility change, even a system package update would fail if a zensible package conflicts - things like that are hard to catch in a playbook).
+- Packages are versioned, representing role definitions and inventory versions
+- Given a package repository managed by a Zensible instance, package installation could be all that an automation needed to be in terms of runtime infrastructure
+- ...
+
+A benefit might be that a host might not need to expose any interface to Zensible (no ssh) and instead just follow an auto-update policy. This seems to be a bit over the top, but that would be one service less to worry about in terms of security.
+
+Another benefit is that a host using cloud-init could be set up to use the custom repo with role-packages being installed on first run and come up fully configured without any prior interaction other than the state of the role-repository.
+
+Problems like divering names of packages in different linux distributions or even across OS boundaries could be handled by providing standardized virtual packages in the zensible repo, which could also bridge package manager boundaries (like having .deb packages for snap or flatpak packages, particular versions thereof and also custom builds based on platform source packages). This would not change the amount of work to do the mapping, but the result could be easily shared in the community.
+
+*** Roles, Monitoring and Events
+Declarative roles know whether they are in a valid state (the post condition). Consequently, the very same queries determining the work needed to be done can be used to monitor whether everything is in working order and could either report or alert in the event of problems of even trigger a rerun of a zensibook/role.
+
+If roles use the target packaging, packages can include monitor modules that can efficiently observe the state of a role, by integrating the monitor in the system.
+
+An added benefit of contracts would then be, that you get the configuration of some monitoring service for free (if supported by zensible)
